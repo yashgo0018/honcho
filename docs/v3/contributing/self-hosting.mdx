@@ -84,7 +84,7 @@ Copy the example environment file and configure it:
 cp .env.template .env
 ```
 
-Edit `.env` and configure your LLM provider — see [LLM Setup](#llm-setup) above. The database connection is set in the compose file. Auth is disabled by default (`AUTH_USE_AUTH=false`).
+Edit `.env` and configure your LLM provider, external `DB_CONNECTION_URI`, and `HONCHO_DOMAIN` — see [LLM Setup](#llm-setup) above. For automatic HTTPS, point `HONCHO_DOMAIN` DNS at this host and allow inbound ports 80 and 443. Auth is disabled by default (`AUTH_USE_AUTH=false`).
 
 ### 3. Start the Services
 
@@ -95,7 +95,7 @@ docker compose up -d --build
 
 The first build takes a few minutes (compiling from source). Subsequent starts are fast.
 
-This starts four services: **api** (port 8000), **deriver** (background worker), **database** (PostgreSQL with pgvector, port 5432), and **redis** (port 6379). All ports are bound to `127.0.0.1`. Redis caching is enabled by default.
+This starts four services: **caddy** (ports 80/443, automatic HTTPS), **api** (port 8000 bound to `127.0.0.1` for local debugging), **deriver** (background worker), and **redis** (port 6379 bound to `127.0.0.1`). Redis caching is enabled by default. Postgres is expected to be an external database configured via `DB_CONNECTION_URI`.
 
 For development, uncomment the source mount and monitoring sections inside `docker-compose.yml` to enable live reload, Prometheus, and Grafana.
 
@@ -107,7 +107,7 @@ Migrations run automatically on startup.
 # Check all containers are running
 docker compose ps
 
-# Health check (confirms the process is up)
+# Health check (confirms the process is up; use https://$HONCHO_DOMAIN/health in production)
 curl http://localhost:8000/health
 
 # Check the deriver is processing (look for "polling" or "processing" in logs)
@@ -189,7 +189,7 @@ cp .env.template .env
 Edit `.env` — configure your LLM provider (see [LLM Setup](#llm-setup) above) and set the database connection:
 
 ```bash
-DB_CONNECTION_URI=postgresql+psycopg://postgres:postgres@localhost:5432/postgres
+DB_CONNECTION_URI=postgresql+psycopg://user:password@host:5432/database
 AUTH_USE_AUTH=false
 LOG_LEVEL=DEBUG
 ```
@@ -334,17 +334,12 @@ Running into issues? See the [Troubleshooting Guide](./troubleshooting) for deta
 
 ## Production Considerations
 
-The default compose file is already production-oriented — ports bound to `127.0.0.1`, restart policies, caching enabled.
+The default compose file is production-oriented: Caddy terminates HTTPS on ports 80/443, the API and Redis are only exposed directly on `127.0.0.1`, restart policies are enabled, and Redis caching is enabled.
 
 ### Security
 - Set `AUTH_USE_AUTH=true` and generate a JWT secret with `python scripts/generate_jwt_secret.py`
-- Use HTTPS via a reverse proxy in front of Honcho. Example with Caddy (automatic TLS):
-  ```
-  honcho.example.com {
-      reverse_proxy localhost:8000
-  }
-  ```
-  Or with nginx:
+- The Docker setup includes Caddy for automatic HTTPS. Set `HONCHO_DOMAIN` in `.env`, point DNS at the host, and allow inbound ports 80 and 443.
+- For manual/non-Compose deployments, put a reverse proxy in front of Honcho. Example with nginx:
   ```nginx
   server {
       listen 443 ssl;
@@ -387,13 +382,13 @@ The default compose file is already production-oriented — ports bound to `127.
 - The development compose includes Prometheus (host port 9090) and Grafana (host port 3000) for scraping and dashboards. Uncomment those services to enable them.
 
 ### Backups
-- Set up regular PostgreSQL backups:
+- Set up regular PostgreSQL backups with your database provider. If your external database allows direct `pg_dump` access:
   ```bash
   # One-off backup
-  docker compose exec database pg_dump -U postgres postgres > backup-$(date +%Y%m%d).sql
+  pg_dump "postgresql://user:password@host:5432/database" > backup-$(date +%Y%m%d).sql
 
   # Restore
-  cat backup.sql | docker compose exec -T database psql -U postgres postgres
+  psql "postgresql://user:password@host:5432/database" < backup.sql
   ```
 
 ## Deploying on Fly.io

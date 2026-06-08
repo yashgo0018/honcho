@@ -274,7 +274,7 @@ Honcho's evals span LongMemEval, LoCoMo, and other long-conversation benchmarks.
 
 ## Self-hosting
 
-Honcho is open source under AGPL-3.0. You can run the full server locally with Docker, then point the SDKs at `http://localhost:8000`.
+Honcho is open source under AGPL-3.0. You can run the full server with Docker and Caddy-managed HTTPS, then point the SDKs at your configured `HONCHO_DOMAIN`.
 
 ### Quick start (Docker)
 
@@ -282,15 +282,15 @@ Honcho is open source under AGPL-3.0. You can run the full server locally with D
 git clone https://github.com/plastic-labs/honcho.git
 cd honcho
 cp docker-compose.yml.example docker-compose.yml
-cp .env.template .env       # fill in LLM_GEMINI_API_KEY / LLM_ANTHROPIC_API_KEY / LLM_OPENAI_API_KEY
+cp .env.template .env       # fill in HONCHO_DOMAIN, DB_CONNECTION_URI, and your LLM provider key
 docker compose up
 ```
 
 Then point the SDKs at it:
 
 ```python
-honcho = Honcho(workspace_id="my-app-testing", base_url="http://localhost:8000")
-# or: export HONCHO_URL=http://localhost:8000
+honcho = Honcho(workspace_id="my-app-testing", base_url="https://honcho.example.com")
+# or: export HONCHO_URL=https://honcho.example.com
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -340,15 +340,8 @@ source honcho/.venv/bin/activate
 
 Honcho utilizes [Postgres](https://www.postgresql.org/) for its database with
 pgvector. An easy way to get started with a postgres database is to create a project
-with [Supabase](https://supabase.com/)
-
-Alternatively, a `docker-compose` template is available with a sample database configuration.
-To use Docker:
-
-```bash
-cp docker-compose.yml.example docker-compose.yml
-docker compose up -d database
-```
+with [Supabase](https://supabase.com/). Set `DB_CONNECTION_URI` in `.env` to point
+at your external database.
 
 4. **Edit the environment variables**
 

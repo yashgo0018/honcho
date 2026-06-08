@@ -54,12 +54,15 @@ cp .env.template .env
 Edit `.env` and set your API keys (if using LLM features):
 
 ```bash
+# Public hostname for Caddy automatic HTTPS
+HONCHO_DOMAIN=honcho.example.com
+
 # Optional API keys (required for LLM features)
 OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 
-# Database will be created automatically by Docker
-DB_CONNECTION_URI=postgresql+psycopg://postgres:postgres@database:5432/postgres
+# External PostgreSQL database with pgvector support
+DB_CONNECTION_URI=postgresql+psycopg://user:password@host:5432/database
 
 
 # Disable auth for local development
@@ -72,13 +75,13 @@ AUTH_USE_AUTH=false
 # Copy the example docker-compose file
 cp docker-compose.yml.example docker-compose.yml
 
-# Start PostgreSQL and Honcho
+# Start Honcho services
 docker compose up -d
 ```
 
 ### 4. Verify It's Working
 
-Check that both services are running:
+Check that the services are running:
 
 ```bash
 docker compose ps
@@ -87,7 +90,7 @@ docker compose ps
 Test the Honcho API:
 
 ```bash
-curl http://localhost:8000/health
+curl https://honcho.example.com/health
 ```
 
 You should see a response indicating the service is healthy.
@@ -167,7 +170,7 @@ Edit `.env` with your configuration:
 
 ```bash
 # Database connection
-DB_CONNECTION_URI=postgresql+psycopg://postgres:postgres@localhost:5432/postgres
+DB_CONNECTION_URI=postgresql+psycopg://user:password@host:5432/database
 
 # Optional API keys (required for LLM features)
 OPENAI_API_KEY=your-openai-api-key

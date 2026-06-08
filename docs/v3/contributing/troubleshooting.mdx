@@ -267,7 +267,7 @@ If you see permission errors at runtime (not build time), you can either:
 
 1. Check container status: `docker compose ps`
 2. Check API logs: `docker compose logs api`
-3. Check database logs: `docker compose logs database`
+3. Check your external database provider logs and connectivity for `DB_CONNECTION_URI`
 4. Ensure migrations ran: `docker compose exec api uv run alembic upgrade head`
 
 ### Port conflicts

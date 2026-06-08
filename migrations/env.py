@@ -146,11 +146,13 @@ def run_migrations_online() -> None:
         echo=False,
         connect_args={
             "prepare_threshold": None,
-            "options": "-c statement_timeout=300000",  # 5 minutes in milliseconds
         },
     )
 
     with connectable.connect() as connection:
+        # Set timeout after connect so external poolers that reject startup
+        # parameters, such as Neon, can still run migrations safely.
+        connection.execute(text("SET statement_timeout = 300000"))
         # Create schema and commit it outside the main migration transaction
         connection.execute(
             text(f"CREATE SCHEMA IF NOT EXISTS {target_metadata.schema};")
